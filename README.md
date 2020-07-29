@@ -12,7 +12,7 @@ Since then, it has spiraled out of control into a fledgling in-terminal web brow
 - Ensure you have python3.8, iTerm2, and git installed on your local machine
 - If you do not already have a directory for all your git repositories, run `cd ~; mkdir git_repos; cd get_repos;`
 - Clone this repository with `git clone https://github.com/AlexisGoodfellow/itbrowz.git`
-- Run `cd itbrowz; pip3 install -r requirements.txt; ln ~/git_repos/itbrowz/itbrowz.py /usr/local/bin/itbrowz`
+- Run `cd itbrowz; pip3 install -r requirements.txt; ln ~/git_repos/itbrowz/itbrowz.py /usr/local/bin/itbrowz; ln ~/git_repos/itbrowz/imgcat /usr/local/bin/imgcat`
 
 #### Using itbrowz
 

@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 import argparse
+import re
 import shutil
+import subprocess
+import tempfile
+from copy import deepcopy
 from dataclasses import dataclass
 from typing import List
-from copy import deepcopy
 
 from bs4 import BeautifulSoup  # type: ignore
+from termcolor import colored
 
 import requests
-from termcolor import colored
 
 
 @dataclass
 class TerminalRenderData:
+    base_url: str
     color: str
     attrs: List[str]
     div_depth: int
@@ -20,7 +24,9 @@ class TerminalRenderData:
     span_depth: int
     base_terminal_width: int
 
-    def __init__(self):
+    def __init__(self, base_url):
+        self.base_url = base_url
+        self.root_url = re.match(r"(^.*\..*?)/", self.base_url).group(1)
         self.color = "green"
         self.attrs = []
         self.div_depth = 0
@@ -80,32 +86,36 @@ class TerminalRenderData:
         ]
 
 
-def oops_i_wrote_a_browser(root_element):
-    render_html(root_element.contents)
+def oops_i_wrote_a_browser(root_element, base_url):
+    render_html(root_element.contents, base_url)
 
 
 def spell_lookup(args):
-    res = requests.get(f"https://5thsrd.org/spellcasting/spells/{args.spell}/")
+    base_url = "https://5thsrd.org/spellcasting/spells/"
+    res = requests.get(f"{base_url}{args.spell}")
     text = BeautifulSoup(res.content, "html.parser")
     root = text.body.find("div", class_="container", recursive=False)
-    oops_i_wrote_a_browser(root)
+    oops_i_wrote_a_browser(root, base_url)
 
 
 def class_lookup(args):
-    res = requests.get(f"https://5thsrd.org/character/classes/{args._class}/")
+    base_url = "https://5thsrd.org/character/classes/"
+    res = requests.get(f"{base_url}{args._class}")
     text = BeautifulSoup(res.content, "html.parser")
     root = text.body.find("div", class_="container", recursive=False)
-    oops_i_wrote_a_browser(root)
+    oops_i_wrote_a_browser(root, base_url)
 
 
 def race_lookup(args):
-    res = requests.get(f"https://5thsrd.org/character/races/{args.race}/")
+    base_url = "https://5thsrd.org/character/races/"
+    res = requests.get(f"{base_url}{args.race}")
     text = BeautifulSoup(res.content, "html.parser")
     root = text.body.find("div", class_="container", recursive=False)
-    oops_i_wrote_a_browser(root)
+    oops_i_wrote_a_browser(root, base_url)
 
 
 def arbitrary_url_lookup(args):
+    base_url = "/".join(args.url.split("/")[0:-1])
     res = requests.get(args.url)
     text = BeautifulSoup(res.content, "html.parser")
     if args.div:
@@ -114,7 +124,7 @@ def arbitrary_url_lookup(args):
             root = text.body.find("div", id=args.div, recursive=False)
     else:
         root = text.body
-    oops_i_wrote_a_browser(root)
+    oops_i_wrote_a_browser(root, base_url)
 
 
 def main():
@@ -126,8 +136,12 @@ def main():
         "-c", "--class", type=str, dest="_class", default="", help="Class"
     )
     parser.add_argument("-r", "--race", type=str, dest="race", default="", help="Race")
-    parser.add_argument("-u", "--url", type=str, dest="url", default="", help="Arbitrary URL")
-    parser.add_argument("-d", "--div", type=str, dest="div", default="", help="Div identifier")
+    parser.add_argument(
+        "-u", "--url", type=str, dest="url", default="", help="Arbitrary URL"
+    )
+    parser.add_argument(
+        "-d", "--div", type=str, dest="div", default="", help="Div identifier"
+    )
     args = parser.parse_args()
     for k, v in vars(args).items():
         vars(args)[k] = v.replace("-", "_") if k == "spell" else v
@@ -154,6 +168,9 @@ def element_renderer(elem, render_info):
     elif elem.name == "table":
         render_table(elem, render_info)
         return []  # THIS IS A HACK
+    elif elem.name == "img":
+        render_image(elem, render_info)
+        return []
     elif elem.name == "ol" or elem.name == "ul":
         return render_list(elem, render_info)
     elif (
@@ -179,6 +196,11 @@ def element_renderer(elem, render_info):
         r = deepcopy(render_info)
         r.attrs = []
         return [element_renderer(x, r) for x in elem.contents]
+    elif elem.name == "label":
+        r = deepcopy(render_info)
+        r.colr = "blue"
+        r.attrs = ["underline"]
+        return [element_renderer(x, r) for x in elem.contents]
     elif elem.name == "li":
         r = deepcopy(render_info)
         r.attrs = []
@@ -201,6 +223,9 @@ def element_renderer(elem, render_info):
         or elem.name == "br"
         or elem.name == "wbr"
         or elem.name == "script"
+        or elem.name == "style"
+        or elem.name == "input"
+        or elem.name == "form"
     ):
         return []  # Will be flattened out
     else:
@@ -215,9 +240,9 @@ def flatten(l):
         return flattened
 
 
-def render_html(elements):
+def render_html(elements, base_url):
     # Collect child elements together into a list
-    render_info = TerminalRenderData()
+    render_info = TerminalRenderData(base_url)
     for x in elements:
         all_child_elements = flatten(element_renderer(x, render_info))
         for y in all_child_elements:
@@ -225,12 +250,27 @@ def render_html(elements):
         eprint("\n")
 
 
-# TABLES AND LISTS ARE HARD AS NAILS TO FORMAT RIGHT - THESE ARE HACKS
 def render_list(list_, render_info):
     r = deepcopy(render_info)
     r.color = "magenta"
     r.list_depth += 1
     return [element_renderer(x, r) for x in list_.contents]
+
+
+# TABLES AND IMAGES ARE HARD AS NAILS TO FORMAT RIGHT - THESE ARE HACKS
+def render_image(image, render_info):
+    image_source = image["src"]
+    if "http" not in image_source:
+        if image_source.startswith("/"):
+            print(render_info.root_url)
+            print(image_source)
+            image_source = render_info.root_url + image_source
+        else:
+            image_source = render_info.base_url + image_source
+    with tempfile.NamedTemporaryFile() as f:
+        r = requests.get(image_source, stream=True)
+        f.write(r.content)
+        subprocess.call(["imgcat", f.name])
 
 
 def render_horizontal_line(render_info):
@@ -303,7 +343,7 @@ def render_div(div, render_info):
             ),
             colored("/", border_color, attrs=[]),
             colored("|" * render_info.div_depth, border_color, attrs=[]),
-        ]
+        ],
     ]
 
 
@@ -316,7 +356,8 @@ def render_span(span, render_info):
             element_renderer(x, r),
             colored("]", "blue", attrs=[]),
         ]
-        for x in span.contents if str(x) != "\n"
+        for x in span.contents
+        if str(x) != "\n"
     ]
 
 
@@ -383,3 +424,4 @@ def eprint(arg):
 
 if __name__ == "__main__":
     main()
+
