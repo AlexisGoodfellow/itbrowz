@@ -37,6 +37,12 @@ accessing D&D spells, classes, and races. To do this, simply do one of:
 - `itbrowz --class <class_name>`
 - `itbrowz --race <race_name>`
 
+#### Sample Output
+
+- `itbrowz --spell animate-objects`
+![itbrowz --spell animate-objects](./images/animate-objects.png)
+
+
 #### Missing features
 
 `itbrowz` does not support JavaScript or custom CSS styling. This is intentional,
