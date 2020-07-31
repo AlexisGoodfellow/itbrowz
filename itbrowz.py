@@ -20,7 +20,7 @@ class TerminalRenderData:
     attrs: List[str]
     div_depth: int
     list_depth: int
-    span_depth: int
+    link_text: str
     base_terminal_width: int
 
     def __init__(self, base_url):
@@ -30,7 +30,7 @@ class TerminalRenderData:
         self.attrs = []
         self.div_depth = 0
         self.list_depth = 0
-        self.span_depth = 0
+        self.link_text = ""
         self.base_terminal_width = shutil.get_terminal_size()[0]
 
     def consumed_width(self):
@@ -47,7 +47,6 @@ class TerminalRenderData:
         cleaned_strings = []
         for string in cut_strings:
             formatted_strings = [
-                # TODO REVERT
                 str(string)[i : i + self.avaliable_terminal_width()]
                 for i in range(0, len(string), self.avaliable_terminal_width())
             ]
@@ -55,32 +54,34 @@ class TerminalRenderData:
                 cleaned_strings.append(s)
         return cleaned_strings
 
-    def render_root_text(self, base_string):
+    def suffix(self, s):
+        if self.link_text != "":
+            pad_str = " " * (self.avaliable_terminal_width() - len(s) - len(self.link_text))
+        else:
+            pad_str = " " * (self.avaliable_terminal_width() - len(s))
+
+        return colored(pad_str, self.color, attrs=[]) + colored("|" * self.div_depth, "white", attrs=[])
+
+    def prefix(self):
+        base_prefix = colored("|" * self.div_depth, "white", attrs=[])
         if self.list_depth != 0:
-            return [
-                [
-                    colored("|" * self.div_depth, "white", attrs=[]),
-                    colored(("    " * self.list_depth) + "-- ", "magenta", attrs=[]),
-                    colored(s, self.color, attrs=self.attrs),
-                    colored(
-                        " " * (self.avaliable_terminal_width() - len(s)),
-                        self.color,
-                        attrs=[],
-                    ),
-                    colored("|" * self.div_depth, "white", attrs=[]),
-                ]
-                for s in self.clean_strings(base_string)
-            ]
+            return base_prefix + colored(("    " * self.list_depth) + "-- ", "magenta", attrs=[])
+        else:
+            return base_prefix
+
+    def core(self, s):
+        base = colored(s, self.color, attrs=self.attrs)
+        if self.link_text != "":
+            return base + colored(self.link_text, "blue", attrs=["underline"])
+        else:
+            return base
+
+    def render_root_text(self, base_string):
         return [
             [
-                colored("|" * self.div_depth, "white", attrs=[]),
-                colored(s, self.color, attrs=self.attrs),
-                colored(
-                    " " * (self.avaliable_terminal_width() - len(s)),
-                    self.color,
-                    attrs=[],
-                ),
-                colored("|" * self.div_depth, "white", attrs=[]),
+                self.prefix(),
+                self.core(s),
+                self.suffix(s)
             ]
             for s in self.clean_strings(base_string)
         ]
@@ -171,7 +172,7 @@ def element_renderer(elem, render_info):
     elif elem.name == "img":
         render_image(elem, render_info)
         return []
-    elif elem.name == "ol" or elem.name == "ul":
+    elif elem.name == "ol" or elem.name == "ul" or elem.name == "nav":
         return render_list(elem, render_info)
     elif (
         elem.name == "div"
@@ -257,21 +258,23 @@ def render_list(list_, render_info):
     return [element_renderer(x, r) for x in list_.contents]
 
 
+def get_elem_link_attr(elem, render_info, link_attr):
+    attr = elem[link_attr]
+    if "http" not in attr:
+        if attr.startswith("//"):
+            attr = "https:" + attr
+        elif attr.startswith("/"):
+            attr = render_info.root_url + attr
+        else:
+            attr = render_info.base_url + attr
+    return attr
+
+
 # TABLES AND IMAGES ARE HARD AS NAILS TO FORMAT RIGHT - THESE ARE HACKS
 def render_image(image, render_info):
-    image_source = image["src"]
-    if "http" not in image_source:
-        if image_source.startswith("//"):
-            image_source = "https:" + image_source
-            print(image_source)
-        elif image_source.startswith("/"):
-            print(render_info.root_url)
-            print(image_source)
-            image_source = render_info.root_url + image_source
-        else:
-            image_source = render_info.base_url + image_source
+    image_source_url = get_elem_link_attr(image, render_info, "src")
     with tempfile.NamedTemporaryFile() as f:
-        r = requests.get(image_source, stream=True)
+        r = requests.get(image_source_url, stream=True)
         f.write(r.content)
         subprocess.call(["imgcat", f.name])
 
@@ -291,7 +294,10 @@ def render_horizontal_line(render_info):
 
 
 def render_link(link, render_info):
-    return [element_renderer(x, render_info) for x in link.contents]
+    href = get_elem_link_attr(link, render_info, "href")
+    r = deepcopy(render_info)
+    r.link_text = f"[{href}]"
+    return [element_renderer(x, r) for x in link.contents]
 
 
 def render_div(div, render_info):
