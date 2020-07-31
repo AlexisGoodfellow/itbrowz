@@ -6,6 +6,7 @@ import tempfile
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import List, Dict
+from constants import UNICODE_MAP
 
 from bs4 import BeautifulSoup  # type: ignore
 from termcolor import colored
@@ -21,6 +22,24 @@ def print_long_links():
         print(colored(f"{k}: ", "red", attrs=[]) + colored(f"{v}", "blue", attrs=["underline"]))
 
 
+def superscript_translate(s):
+    ret = ""
+    for letter in s:
+        translated = UNICODE_MAP[letter][0]
+        let = letter if translated == '?' else translated
+        ret.append(let)
+    return ret
+
+
+def subscript_translate(s):
+    ret = ""
+    for letter in s:
+        translated = UNICODE_MAP[letter][1]
+        let = letter if translated == '?' else translated
+        ret.append(let)
+    return ret
+
+
 @dataclass
 class TerminalRenderData:
     base_url: str
@@ -30,6 +49,8 @@ class TerminalRenderData:
     list_depth: int
     span_depth: int
     link_text: str
+    superscript: bool
+    subscript: bool
     base_terminal_width: int
 
     def __init__(self, base_url):
@@ -41,6 +62,8 @@ class TerminalRenderData:
         self.list_depth = 0
         self.span_depth = 0
         self.link_text = ""
+        self.superscript = False
+        self.subscript = False
         self.base_terminal_width = shutil.get_terminal_size()[0]
 
     def consumed_width(self):
@@ -206,6 +229,10 @@ def element_renderer(elem, render_info):
         return render_div(elem, render_info)
     elif elem.name == "span":
         return render_span(elem, render_info)
+    elif elem.name == "sub":
+        return render_subscript(elem, render_info)
+    elif elem.name == "sup":
+        return render_superscript(elem, render_info)
     elif elem.name == "em" or elem.name == "i":
         r = deepcopy(render_info)
         r.attrs += ["bold"]
@@ -256,6 +283,17 @@ def element_renderer(elem, render_info):
         raise NotImplementedError(f"{elem.name} not implemented yet")
 
 
+def render_superscript(superscript, render_info):
+    r = deepcopy(render_info)
+    r.is_superscript = True
+    return [element_renderer(x, r) for x in superscript.contents]
+
+
+def render_subscript(subscript, render_info):
+    r = deepcopy(render_info)
+    r.is_subscript = True
+    return [element_renderer(x, r) for x in subscript.contents]
+
 def flatten(l):
     flattened = [item for sublist in l for item in sublist]
     if any([isinstance(x, list) for x in flattened]):
@@ -283,7 +321,10 @@ def render_list(list_, render_info):
 
 
 def get_elem_link_attr(elem, render_info, link_attr):
-    attr = elem[link_attr]
+    try:
+        attr = elem[link_attr]
+    except KeyError:
+        return ""
     if "http" not in attr:
         if attr.startswith("//"):
             attr = "https:" + attr
