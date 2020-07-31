@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import argparse
-import re
 import shutil
 import subprocess
 import tempfile
@@ -26,7 +25,7 @@ class TerminalRenderData:
 
     def __init__(self, base_url):
         self.base_url = base_url
-        self.root_url = re.match(r"(^.*\..*?)/", self.base_url).group(1)
+        self.root_url = base_url.split('/')[2]
         self.color = "green"
         self.attrs = []
         self.div_depth = 0
@@ -48,6 +47,7 @@ class TerminalRenderData:
         cleaned_strings = []
         for string in cut_strings:
             formatted_strings = [
+                # TODO REVERT
                 str(string)[i : i + self.avaliable_terminal_width()]
                 for i in range(0, len(string), self.avaliable_terminal_width())
             ]
@@ -261,7 +261,10 @@ def render_list(list_, render_info):
 def render_image(image, render_info):
     image_source = image["src"]
     if "http" not in image_source:
-        if image_source.startswith("/"):
+        if image_source.startswith("//"):
+            image_source = "https:" + image_source
+            print(image_source)
+        elif image_source.startswith("/"):
             print(render_info.root_url)
             print(image_source)
             image_source = render_info.root_url + image_source
