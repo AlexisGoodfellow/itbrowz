@@ -5,12 +5,20 @@ import subprocess
 import tempfile
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 
 from bs4 import BeautifulSoup  # type: ignore
 from termcolor import colored
 
 import requests
+
+LONG_LINK_MAP: Dict[str, str] = {}
+NUM_LONG_LINKS = 1
+
+
+def print_long_links():
+    for k, v in LONG_LINK_MAP.items():
+        print(colored(f"{k}: ", "red", attrs=[]) + colored(f"{v}", "blue", attrs=["underline"]))
 
 
 @dataclass
@@ -20,16 +28,18 @@ class TerminalRenderData:
     attrs: List[str]
     div_depth: int
     list_depth: int
+    span_depth: int
     link_text: str
     base_terminal_width: int
 
     def __init__(self, base_url):
         self.base_url = base_url
-        self.root_url = base_url.split('/')[2]
+        self.root_url = "https://" + base_url.split('/')[2]
         self.color = "green"
         self.attrs = []
         self.div_depth = 0
         self.list_depth = 0
+        self.span_depth = 0
         self.link_text = ""
         self.base_terminal_width = shutil.get_terminal_size()[0]
 
@@ -51,30 +61,43 @@ class TerminalRenderData:
                 for i in range(0, len(string), self.avaliable_terminal_width())
             ]
             for s in formatted_strings:
-                cleaned_strings.append(s)
+                cleaned_strings.append(" ".join(s.split("\t")))
         return cleaned_strings
 
     def suffix(self, s):
         if self.link_text != "":
-            pad_str = " " * (self.avaliable_terminal_width() - len(s) - len(self.link_text))
+            if self.avaliable_terminal_width() < len(s) + len(self.link_text):
+                global NUM_LONG_LINKS
+                pad_str = " " * (self.avaliable_terminal_width() - len(s) - 2 - len(str(NUM_LONG_LINKS)) - (self.span_depth * 2))
+                NUM_LONG_LINKS += 1
+            else:
+                pad_str = " " * (self.avaliable_terminal_width() - len(s) - len(self.link_text) - (self.span_depth * 2))
         else:
-            pad_str = " " * (self.avaliable_terminal_width() - len(s))
+            pad_str = " " * (self.avaliable_terminal_width() - len(s) - (self.span_depth * 2))
 
-        return colored(pad_str, self.color, attrs=[]) + colored("|" * self.div_depth, "white", attrs=[])
+        suffix = colored("}" * self.span_depth, "cyan", attrs=[])
+        suffix += colored(pad_str, self.color, attrs=[])
+        return suffix + colored("|" * self.div_depth, "white", attrs=[])
 
     def prefix(self):
-        base_prefix = colored("|" * self.div_depth, "white", attrs=[])
+        prefix = colored("|" * self.div_depth, "white", attrs=[])
         if self.list_depth != 0:
-            return base_prefix + colored(("    " * self.list_depth) + "-- ", "magenta", attrs=[])
-        else:
-            return base_prefix
+            prefix += colored(("    " * self.list_depth) + "-- ", "magenta", attrs=[])
+        if self.span_depth != 0:
+            prefix += colored("{" * self.span_depth, "cyan", attrs=[])
+
+        return prefix
 
     def core(self, s):
         base = colored(s, self.color, attrs=self.attrs)
         if self.link_text != "":
-            return base + colored(self.link_text, "blue", attrs=["underline"])
-        else:
-            return base
+            if self.avaliable_terminal_width() < len(s) + len(self.link_text):
+                global NUM_LONG_LINKS
+                LONG_LINK_MAP[NUM_LONG_LINKS] = self.link_text
+                base += colored(f"[{NUM_LONG_LINKS}]", "blue", attrs=["reverse"])
+            else:
+                base += colored(self.link_text, "blue", attrs=["underline"])
+        return base
 
     def render_root_text(self, base_string):
         return [
@@ -249,6 +272,7 @@ def render_html(elements, base_url):
         for y in all_child_elements:
             eprint(y)
         eprint("\n")
+    print_long_links()
 
 
 def render_list(list_, render_info):
@@ -359,15 +383,8 @@ def render_div(div, render_info):
 # This will throw off alignments - thinking about a fix
 def render_span(span, render_info):
     r = deepcopy(render_info)
-    return [
-        [
-            colored("[", "blue", attrs=[]),
-            element_renderer(x, r),
-            colored("]", "blue", attrs=[]),
-        ]
-        for x in span.contents
-        if str(x) != "\n"
-    ]
+    r.span_depth += 1
+    return [element_renderer(x, r) for x in span.contents if str(x) != "\n"]
 
 
 # HACK HACK HACK
