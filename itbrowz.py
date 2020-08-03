@@ -5,28 +5,30 @@ import subprocess
 import tempfile
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import List, Dict
-from constants import UNICODE_MAP
+from typing import List
 
+import requests
 from bs4 import BeautifulSoup  # type: ignore
 from termcolor import colored
 
-import requests
+from constants import UNICODE_MAP
 
-LONG_LINK_MAP: Dict[str, str] = {}
-NUM_LONG_LINKS = 1
+LINK_LIST: List[str] = ["FILLER"]
 
 
 def print_long_links():
-    for k, v in LONG_LINK_MAP.items():
-        print(colored(f"{k}: ", "red", attrs=[]) + colored(f"{v}", "blue", attrs=["underline"]))
+    for i in range(1, len(LINK_LIST)):
+        print(
+            colored(f"{i}: ", "red", attrs=[])
+            + colored(f"{LINK_LIST[i]}", "blue", attrs=["underline"])
+        )
 
 
 def superscript_translate(s):
     ret = ""
     for letter in s:
         translated = UNICODE_MAP[letter][0]
-        let = letter if translated == '?' else translated
+        let = letter if translated == "?" else translated
         ret.append(let)
     return ret
 
@@ -35,7 +37,7 @@ def subscript_translate(s):
     ret = ""
     for letter in s:
         translated = UNICODE_MAP[letter][1]
-        let = letter if translated == '?' else translated
+        let = letter if translated == "?" else translated
         ret.append(let)
     return ret
 
@@ -55,7 +57,7 @@ class TerminalRenderData:
 
     def __init__(self, base_url):
         self.base_url = base_url
-        self.root_url = "https://" + base_url.split('/')[2]
+        self.root_url = "https://" + base_url.split("/")[2]
         self.color = "green"
         self.attrs = []
         self.div_depth = 0
@@ -67,12 +69,12 @@ class TerminalRenderData:
         self.base_terminal_width = shutil.get_terminal_size()[0]
 
     def consumed_width(self):
-        if self.list_depth == 0:
-            return self.div_depth * 2
-        else:
-            return (self.div_depth * 2) + (self.list_depth * 4) + 3
+        consumed_columns = (self.div_depth) * 2
+        if self.list_depth != 0:
+            return consumed_columns + (self.list_depth * 4) + 3
+        return consumed_columns
 
-    def avaliable_terminal_width(self):
+    def available_terminal_width(self):
         return self.base_terminal_width - self.consumed_width()
 
     def clean_strings(self, base_string):
@@ -80,27 +82,32 @@ class TerminalRenderData:
         cleaned_strings = []
         for string in cut_strings:
             formatted_strings = [
-                str(string)[i : i + self.avaliable_terminal_width()]
-                for i in range(0, len(string), self.avaliable_terminal_width())
+                str(string)[i : i + self.available_terminal_width()]
+                for i in range(0, len(string), self.available_terminal_width())
             ]
             for s in formatted_strings:
                 cleaned_strings.append(" ".join(s.split("\t")))
         return cleaned_strings
 
     def suffix(self, s):
+        padding_amount = (
+            self.available_terminal_width() - len(s) - (self.span_depth * 2)
+        )
         if self.link_text != "":
-            if self.avaliable_terminal_width() < len(s) + len(self.link_text):
-                global NUM_LONG_LINKS
-                pad_str = " " * (self.avaliable_terminal_width() - len(s) - 2 - len(str(NUM_LONG_LINKS)) - (self.span_depth * 2))
-                NUM_LONG_LINKS += 1
-            else:
-                pad_str = " " * (self.avaliable_terminal_width() - len(s) - len(self.link_text) - (self.span_depth * 2))
-        else:
-            pad_str = " " * (self.avaliable_terminal_width() - len(s) - (self.span_depth * 2))
+            link_number = 0
+            for i in range(1, len(LINK_LIST)):
+                if LINK_LIST[i] == self.link_text:
+                    link_number = i
+            padding_amount -= len(str(link_number)) + 2
+        pad_str = " " * padding_amount
+
+        div_bars = self.div_depth
+        if padding_amount <= 0:
+            div_bars += padding_amount
 
         suffix = colored("}" * self.span_depth, "cyan", attrs=[])
         suffix += colored(pad_str, self.color, attrs=[])
-        return suffix + colored("|" * self.div_depth, "white", attrs=[])
+        return suffix + colored("|" * div_bars, "white", attrs=[])
 
     def prefix(self):
         prefix = colored("|" * self.div_depth, "white", attrs=[])
@@ -114,23 +121,24 @@ class TerminalRenderData:
     def core(self, s):
         base = colored(s, self.color, attrs=self.attrs)
         if self.link_text != "":
-            if self.avaliable_terminal_width() < len(s) + len(self.link_text):
-                global NUM_LONG_LINKS
-                LONG_LINK_MAP[NUM_LONG_LINKS] = self.link_text
-                base += colored(f"[{NUM_LONG_LINKS}]", "blue", attrs=["reverse"])
-            else:
-                base += colored(self.link_text, "blue", attrs=["underline"])
+            link_number = 0
+            for i in range(1, len(LINK_LIST)):
+                if LINK_LIST[i] == self.link_text:
+                    link_number = i
+                    break
+            if link_number == 0:
+                LINK_LIST.append(self.link_text)
+                link_number = len(LINK_LIST) - 1
+            base += colored(f"[{link_number}]", "blue", attrs=["reverse"])
         return base
 
     def render_root_text(self, base_string):
-        return [
-            [
-                self.prefix(),
-                self.core(s),
-                self.suffix(s)
-            ]
-            for s in self.clean_strings(base_string)
-        ]
+        elems = []
+        for s in self.clean_strings(base_string):
+            elems.append(self.prefix())
+            elems.append(self.core(s))
+            elems.append(self.suffix(s))
+        return elems
 
 
 def oops_i_wrote_a_browser(root_element, base_url):
@@ -294,6 +302,7 @@ def render_subscript(subscript, render_info):
     r.is_subscript = True
     return [element_renderer(x, r) for x in subscript.contents]
 
+
 def flatten(l):
     flattened = [item for sublist in l for item in sublist]
     if any([isinstance(x, list) for x in flattened]):
@@ -349,7 +358,7 @@ def render_horizontal_line(render_info):
         colored(
             "|" * render_info.div_depth
             + ("    " * render_info.list_depth)
-            + ("-" * render_info.avaliable_terminal_width())
+            + ("-" * render_info.available_terminal_width())
             + "|" * render_info.div_depth,
             "cyan",
             attrs=[],
@@ -491,4 +500,3 @@ def eprint(arg):
 
 if __name__ == "__main__":
     main()
-
