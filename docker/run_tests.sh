@@ -69,8 +69,9 @@ else
   echo "Running bandit..."
   bandit --ini .bandit -r itbrowz
 
-  echo "Running pydocstyle..."
-  pydocstyle --config=.pydocstyle itbrowz
+  # TODO: Add docstrings incrementally and turn this back on
+  # echo "Running pydocstyle..."
+  # pydocstyle --config=.pydocstyle itbrowz
 
   echo "Running iSort..."
   isort --recursive ${ISORT_ACTION} itbrowz tests tests_integration

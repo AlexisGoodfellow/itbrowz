@@ -60,10 +60,10 @@ jobs:
           command: |
             mypy itbrowz tests tests_integration | tee ${TEST_RESULTS}/mypy.out
 
-      - run:
-          name: pydocstyle
-          command: |
-            pydocstyle itbrowz tests tests_integration | tee ${TEST_RESULTS}/pydoc.out
+      # - run:
+      #     name: pydocstyle
+      #     command: |
+      #       pydocstyle itbrowz tests tests_integration | tee ${TEST_RESULTS}/pydoc.out
 
       # - deploy:
       #     name: Build and push Docker image
