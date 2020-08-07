@@ -40,7 +40,7 @@ class TerminalRenderData:
 
     def __init__(self, base_url):
         self.base_url = base_url
-        self.root_url = "https://" + base_url.split("/")[2]
+        self.root_url = "https://" + base_url.split("/")[2] + "/"
         self.color = "green"
         self.attrs = []
         self.div_depth = 0
@@ -135,25 +135,22 @@ def oops_i_wrote_a_browser(root_element, base_url):
 def spell_lookup(args):
     base_url = "https://5thsrd.org/spellcasting/spells/"
     res = requests.get(f"{base_url}{args.spell}")
-    text = BeautifulSoup(res.content, "html.parser")
-    root = text.body.find("div", class_="container", recursive=False)
-    oops_i_wrote_a_browser(root, base_url)
+    root = BeautifulSoup(res.content, "html.parser")
+    oops_i_wrote_a_browser(root.body, base_url)
 
 
 def class_lookup(args):
     base_url = "https://5thsrd.org/character/classes/"
     res = requests.get(f"{base_url}{args._class}")
-    text = BeautifulSoup(res.content, "html.parser")
-    root = text.body.find("div", class_="container", recursive=False)
-    oops_i_wrote_a_browser(root, base_url)
+    root = BeautifulSoup(res.content, "html.parser")
+    oops_i_wrote_a_browser(root.body, base_url)
 
 
 def race_lookup(args):
     base_url = "https://5thsrd.org/character/races/"
     res = requests.get(f"{base_url}{args.race}")
-    text = BeautifulSoup(res.content, "html.parser")
-    root = text.body.find("div", class_="container", recursive=False)
-    oops_i_wrote_a_browser(root, base_url)
+    root = BeautifulSoup(res.content, "html.parser")
+    oops_i_wrote_a_browser(root.body, base_url)
 
 
 def arbitrary_url_lookup(args):
