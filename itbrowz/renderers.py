@@ -48,16 +48,14 @@ def render_script(script, render_info):
 
 
 def render_horizontal_line(render_info):
-    return [
-        colored(
-            "|" * render_info.div_depth
-            + ("    " * render_info.list_depth)
-            + ("-" * render_info.available_terminal_width())
-            + "|" * render_info.div_depth,
-            "cyan",
-            attrs=[],
-        )
-    ]
+    return colored(
+        "|" * render_info.div_depth
+        + ("    " * render_info.list_depth)
+        + ("-" * render_info.available_terminal_width())
+        + "|" * render_info.div_depth,
+        "cyan",
+        attrs=[],
+    )
 
 
 def render_div(div, render_info):
