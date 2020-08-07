@@ -1,0 +1,80 @@
+---
+version: 2
+jobs:
+  build:
+    docker:
+      - image: alexisegoodfellow/itbrowz:latest
+    working_directory: /app
+
+    environment:
+      TEST_RESULTS: /tmp/test-results
+
+    steps:
+      - checkout
+
+      - setup_remote_docker
+
+      - run: mkdir -p $TEST_RESULTS
+
+      # Read about caching dependencies: https://circleci.com/docs/2.0/caching/
+      - restore_cache:
+          key: deps9-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-test.txt"}}
+
+      - run:
+          command: |
+            pip install -r requirements.txt -r requirements-test.txt
+
+      # cache Python dependencies using checksum of Pipfile as the cache-key
+      - save_cache:
+          key: deps9-{{ .Branch }}-{{ checksum "requirements.txt" }}-{{ checksum "requirements-test.txt"}}
+          paths:
+            - "venv"
+
+      - run:
+          name: pytest
+          command: |
+            pytest tests --cov-report html | tee ${TEST_RESULTS}/pytest.out
+
+      - run:
+          name: bandit
+          command: |
+            bandit -r itbrowz tests tests_integration | tee ${TEST_RESULTS}/bandit.out
+
+      - run:
+          name: black
+          command: |
+            black --check itbrowz tests tests_integration | tee ${TEST_RESULTS}/black.out
+
+      - run:
+          name: flake8
+          command: |
+            flake8 itbrowz tests tests_integration | tee ${TEST_RESULTS}/flake8.out
+
+      - run:
+          name: isort
+          command: |
+            isort --recursive --check-only itbrowz tests tests_integration | tee ${TEST_RESULTS}/isort.out
+
+      - run:
+          name: mypy
+          command: |
+            mypy itbrowz tests tests_integration | tee ${TEST_RESULTS}/mypy.out
+
+      - run:
+          name: pydocstyle
+          command: |
+            pydocstyle itbrowz tests tests_integration | tee ${TEST_RESULTS}/pydoc.out
+
+      # - deploy:
+      #     name: Build and push Docker image
+      #     command: |
+      #       TAG="0.1.${CIRCLE_BUILD_NUM}"
+      #       docker build -t alexisegoodfellow/itbrowz:$TAG .
+      #       docker push alexisegoodfellow/itbrowz:$TAG
+
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: raw-test-output
+
+      - store_test_results:
+          path: /tmp/test-results

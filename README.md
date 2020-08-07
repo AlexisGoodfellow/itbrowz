@@ -43,13 +43,13 @@ documentation with `itbrowz --help`.
 #### Sample Output
 
 - Excerpt of `itbrowz --spell animate-objects`
-![itbrowz --spell animate-objects](./images/animate-objects.png)
+![itbrowz --spell animate-objects](./assets/animate-objects.png)
 
 - Excerpt of `itbrowz --class bard`
-![itbrowz --class bard](./images/bard.png)
+![itbrowz --class bard](./assets/bard.png)
 
 - Excerpt of `itbrowz --race elf`
-![itbrowz --race elf](./images/elf.png)
+![itbrowz --race elf](./assets/elf.png)
 
 #### Missing features
 

@@ -1,0 +1,35 @@
+---
+version: '3.4'
+
+x-defaults: &defaults
+  image: "composte"
+  build:
+    dockerfile: ./docker/Dockerfile
+    context: .
+  environment:
+    PYENV_VERSION: "composte"
+    LC_ALL: 'en_US.UTF-8'
+    LANG: 'en_US.UTF-8'
+  entrypoint: /bin/bash
+  volumes:
+    - ./:/app
+
+services:
+  # run tests & lints
+  test:
+    <<: *defaults
+    command: docker/run_tests.sh
+
+  test-integration:
+    <<: *defaults
+    command: docker/run_tests.sh --integration
+
+  # Create an updated requirements.lock
+  lock-requirements:
+    <<: *defaults
+    command: docker/lock_requirements.sh
+
+volumes:
+  home:
+  venv:
+    driver: local
