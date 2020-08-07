@@ -35,7 +35,7 @@ def string_terminator():
     return base_string
 
 
-def print_image_in_iterm(filename):
+def imgcat(filename):
     fn = os.path.abspath(filename)
     with open(fn, "rb") as f:
         file_contents = f.read()
@@ -70,7 +70,7 @@ def main():
     args = parser.parse_args()
     if args.filename:
         try:
-            print_image_in_iterm(args.filename)
+            imgcat(args.filename)
         except IOError:
             print(f"File {args.filename} could not be opened!")
 

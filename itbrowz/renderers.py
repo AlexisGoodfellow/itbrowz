@@ -1,9 +1,12 @@
 import shutil
+import tempfile
 from copy import deepcopy
 
+import requests
 from termcolor import colored
 
-from .utils import eprint, get_elem_link_attr
+from itbrowz.imgcat import imgcat
+from itbrowz.utils import eprint, get_elem_link_attr
 
 
 def render_superscript(superscript, render_info):
@@ -42,6 +45,14 @@ def render_list(list_, render_info):
 # TODO: Implement this
 def render_script(script, render_info):
     return []
+
+
+def render_image(image, render_info):
+    image_path = get_elem_link_attr(image, render_info, "src")
+    image_response = requests.get(image_path)
+    with tempfile.NamedTemporaryFile() as f:
+        f.write(image_response.content)
+        imgcat(f.name)
 
 
 def render_horizontal_line(render_info):
@@ -180,7 +191,7 @@ def element_renderer(elem, render_info):
         render_table(elem, render_info)
         return []  # THIS IS A HACK
     elif elem.name == "img" or elem.name == "svg":
-        # Come back to image rendering later
+        render_image(elem, render_info)
         return []
     elif elem.name == "ol" or elem.name == "ul" or elem.name == "nav":
         return render_list(elem, render_info)
