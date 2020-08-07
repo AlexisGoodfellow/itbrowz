@@ -5,9 +5,15 @@ def eprint(arg):
     print(arg, end="")
 
 
-def deep_flatten(l):
-    flattened = [item for sublist in l for item in sublist]
-    if any([isinstance(x, list) for x in flattened]):
+def deep_flatten(nested_list):
+    flattened = []
+    for x in nested_list:
+        if isinstance(x, list):
+            for y in x:
+                flattened.append(y)
+        else:
+            flattened.append(x)
+    if any(isinstance(x, list) for x in flattened):
         return deep_flatten(flattened)
     else:
         return flattened

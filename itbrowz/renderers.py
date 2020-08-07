@@ -42,6 +42,11 @@ def render_list(list_, render_info):
     return [element_renderer(x, r) for x in list_.contents]
 
 
+# TODO: Implement this
+def render_script(script, render_info):
+    pass
+
+
 def render_horizontal_line(render_info):
     return [
         colored(
@@ -59,7 +64,7 @@ def render_div(div, render_info):
     border_color = "white"
     r = deepcopy(render_info)
     r.div_depth += 1
-    div_attr_keys = [k for k in div.attrs.keys()]
+    div_attr_keys = list(div.attrs.keys())
     if "id" in div_attr_keys:
         div_title = div["id"]
     elif "class" in div_attr_keys:
@@ -129,7 +134,7 @@ def render_table_helper(row_head_data, body_data, render_info):
     max_lengths = []
     for row_elems in range(0, len(body_data[0])):
         max_lengths.append(
-            max([len(body_data[rows][row_elems]) for rows in range(0, len(body_data))])
+            max(len(body_data[rows][row_elems]) for rows in range(0, len(body_data)))
         )
     maximum_lengths = []
     for i in range(0, len(row_head_lengths)):
@@ -151,8 +156,7 @@ def print_table_format_line(maximum_lengths, render_info):
     eprint(colored("+", "yellow"))
     for length in maximum_lengths:
         eprint(colored("-", "yellow"))
-        for x in range(0, length):
-            eprint(colored("-", "yellow"))
+        eprint(colored("-" * length, "yellow"))
         eprint(colored("-+", "yellow"))
     eprint(colored("\n", "yellow"))
 
@@ -163,8 +167,7 @@ def print_table_data_line(maximum_lengths, row_head_data, render_info):
         eprint(colored(" ", "yellow"))
         padding_amount = maximum_lengths[i] - len(row_head_data[i])
         padding = ""
-        for j in range(0, padding_amount):
-            padding += " "
+        padding += " " * padding_amount
         eprint(colored(row_head_data[i] + padding, "yellow"))
         eprint(colored(" |", "yellow"))
     eprint(colored("\n", "yellow"))

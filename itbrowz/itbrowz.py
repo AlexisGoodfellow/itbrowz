@@ -9,8 +9,12 @@ from bs4 import BeautifulSoup  # type: ignore
 from termcolor import colored
 
 from itbrowz.renderers import element_renderer
-from itbrowz.utils import (deep_flatten, eprint, subscript_translate,
-                           superscript_translate)
+from itbrowz.utils import (
+    deep_flatten,
+    eprint,
+    subscript_translate,
+    superscript_translate,
+)
 
 LINK_LIST: List[str] = ["FILLER"]
 

@@ -15,4 +15,3 @@ pytest-cov==2.10.0
 pytest-freezegun==0.4.1
 pytest-mock==3.1.1
 requests-mock==1.8.0
-wf-bandit-tests==1.0.1

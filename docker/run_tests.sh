@@ -2,7 +2,6 @@
 
 set -e
 
-ACTIVATE_PYENV="true"
 BLACK_ACTION="--check"
 ISORT_ACTION="--check-only"
 TEST_DIRS="./tests"
@@ -11,12 +10,11 @@ IS_INTEGRATION_TEST="false"
 
 function usage
 {
-    echo "usage: run_tests.sh [--format-code] [--no-pyenv]"
+    echo "usage: run_tests.sh [--format-code]"
     echo ""
     echo " --integration : Run integration tests in addition to unit tests."
     echo " --ci          : Do extra work to support CI pipeline."
     echo " --format-code : Format the code instead of checking formatting."
-    echo " --no-pyenv    : Don't activate the pyenv virtualenv"
     exit 1
 }
 
@@ -30,9 +28,6 @@ while [[ $# -gt 0 ]]; do
         --format-code)
         BLACK_ACTION="--quiet"
         ISORT_ACTION="--apply"
-        ;;
-        --no-pyenv)
-        ACTIVATE_PYENV="false"
         ;;
         --ci)
         COV_REPORT=""
@@ -51,10 +46,7 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-if [[ "${ACTIVATE_PYENV}" = "true" ]]; then
-    eval "$(pyenv init -)"
-    pyenv activate itbrowz
-fi
+cat ~/.bashrc
 
 # only generate html locally because the buildkite pipeline can't write to the
 # working directory and writing to /tmp locally won't preserve the files after

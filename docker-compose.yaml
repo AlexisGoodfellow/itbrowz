@@ -2,13 +2,12 @@
 version: '3.4'
 
 x-defaults: &defaults
-  image: "composte"
+  image: "itbrowz"
   build:
     dockerfile: ./docker/Dockerfile
     context: .
   environment:
-    PYENV_VERSION: "composte"
-    LC_ALL: 'en_US.UTF-8'
+    PYENV_VERSION: "itbrowz"
     LANG: 'en_US.UTF-8'
   entrypoint: /bin/bash
   volumes:
@@ -18,11 +17,11 @@ services:
   # run tests & lints
   test:
     <<: *defaults
-    command: docker/run_tests.sh
+    command: docker/run_tests.sh --format-code
 
   test-integration:
     <<: *defaults
-    command: docker/run_tests.sh --integration
+    command: docker/run_tests.sh --format-code --integration
 
   # Create an updated requirements.lock
   lock-requirements:

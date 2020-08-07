@@ -1,4 +1,5 @@
-# Latin: (superscript, subscript)
+# Formatting is as follows:
+# Latin is the key, the values are (superscript, subscript)
 UNICODE_MAP = {
     "0": ("\u2070", "\u2080"),
     "1": ("\u00B9", "\u2081"),
@@ -68,4 +69,3 @@ UNICODE_MAP = {
     "(": ("\u207D", "\u208D"),
     ")": ("\u207E", "\u208E"),
 }
-
