@@ -7,7 +7,6 @@ x-defaults: &defaults
     dockerfile: ./docker/Dockerfile
     context: .
   environment:
-    PYENV_VERSION: "itbrowz"
     LANG: 'en_US.UTF-8'
   stdin_open: true
   tty: true
