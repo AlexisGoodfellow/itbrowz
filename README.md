@@ -9,10 +9,13 @@ Since then, it has spiraled out of control into a fledgling in-terminal web brow
 
 #### Installation
 
-- Ensure you have python3.8, iTerm2, and git installed on your local machine
-- If you do not already have a directory for all your git repositories, run `cd ~; mkdir git_repos; cd get_repos;`
-- Clone this repository with `git clone https://github.com/AlexisGoodfellow/itbrowz.git`
-- Run `cd itbrowz; pip3 install -r requirements.txt; ln ~/git_repos/itbrowz/itbrowz.py /usr/local/bin/itbrowz; ln ~/git_repos/itbrowz/imgcat /usr/local/bin/imgcat`
+An up-to-date version of `itbrowz` is now distributed via Docker Hub.
+This simplifies the local installation process considerably - all you have to do is
+pull down and run the distributed docker image
+
+- Ensure you have docker installed on your local machine and can run `docker pull alexisegoodfellow/itbrowz:latest` without issues
+- Add the alias `alias itbrowz="docker pull alexisegoodfellow/itbrowz:latest && docker run -it alexisegoodfellow/itbrowz:latest python3 -m itbrowz"` to your shell's rc file (ex. ~/.bashrc)
+- Close and re-open all terminal windows
 
 #### Using itbrowz
 
@@ -61,3 +64,4 @@ to continue implementing rendering for additional HTML tags.
 
 Open an issue on GitHub if you experience any difficulty using `itbrowz` which
 clearly describes what the problem is and what steps you've taken to solve it so far.
+Contributions in the form of new test cases are almost always welcome.
