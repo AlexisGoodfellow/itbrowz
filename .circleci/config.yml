@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: alexisegoodfellow/itbrowz:latest
+      - image: alexisegoodfellow/itbrowz:latest-dev # Pull from dev because that's where development happens
     working_directory: /app
 
     environment:
