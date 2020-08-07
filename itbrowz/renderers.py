@@ -41,7 +41,7 @@ def render_list(list_, render_info):
 
 # TODO: Implement this
 def render_script(script, render_info):
-    pass
+    return []
 
 
 def render_horizontal_line(render_info):
@@ -179,7 +179,7 @@ def element_renderer(elem, render_info):
     elif elem.name == "table":
         render_table(elem, render_info)
         return []  # THIS IS A HACK
-    elif elem.name == "img":
+    elif elem.name == "img" or elem.name == "svg":
         # Come back to image rendering later
         return []
     elif elem.name == "ol" or elem.name == "ul" or elem.name == "nav":
@@ -239,7 +239,7 @@ def element_renderer(elem, render_info):
         r.color = "red"
         return [element_renderer(x, r) for x in elem.contents]
     elif elem.name == "script":
-        render_script(elem)
+        render_script(elem, render_info)
     elif (
         elem.name == "ins"
         or elem.name == "br"

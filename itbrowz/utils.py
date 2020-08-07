@@ -6,6 +6,8 @@ def eprint(arg):
 
 
 def deep_flatten(nested_list):
+    if nested_list is None:
+        return []
     flattened = []
     for x in nested_list:
         if isinstance(x, list):
