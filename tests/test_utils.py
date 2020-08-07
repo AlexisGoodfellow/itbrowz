@@ -17,3 +17,11 @@ def test_deep_flatten__deeply_nested_lists__no_nesting_in_result(mocker):
     flattened_list = deep_flatten(nested_list)
 
     assert flattened_list == [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+
+def test_deep_flatten__none__empty_list(mocker):
+    nested_list = None
+
+    flattened_list = deep_flatten(nested_list)
+
+    assert flattened_list == []
