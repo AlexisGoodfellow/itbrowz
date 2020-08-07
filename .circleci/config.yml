@@ -38,7 +38,7 @@ jobs:
       - run:
           name: bandit
           command: |
-            bandit -r itbrowz tests tests_integration | tee ${TEST_RESULTS}/bandit.out
+            bandit -r itbrowz | tee ${TEST_RESULTS}/bandit.out
 
       - run:
           name: black
