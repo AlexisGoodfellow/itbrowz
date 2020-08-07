@@ -2,13 +2,15 @@
 version: '3.4'
 
 x-defaults: &defaults
-  image: "itbrowz"
+  image: "alexisegoodfellow/itbrowz-dev"
   build:
     dockerfile: ./docker/Dockerfile
     context: .
   environment:
     PYENV_VERSION: "itbrowz"
     LANG: 'en_US.UTF-8'
+  stdin_open: true
+  tty: true
   entrypoint: /bin/bash
   volumes:
     - ./:/app
@@ -16,7 +18,7 @@ x-defaults: &defaults
 services:
   itbrowz:
     <<: *defaults
-    entrypoint: python3 -m itbrowz
+    entrypoint: python -m itbrowz
     # The "@" indicates that all arguments will be passed to the script called by `entrypoint`
     command: "@"
 
