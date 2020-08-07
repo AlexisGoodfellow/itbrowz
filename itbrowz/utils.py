@@ -47,8 +47,10 @@ def get_elem_link_attr(elem, render_info, link_attr):
     if "http" not in attr:
         if attr.startswith("//"):
             attr = "https:" + attr
-        elif attr.startswith("/"):
-            attr = render_info.root_url + attr
-        else:
+        elif attr.startswith("/.."):
+            attr = render_info.base_url + attr[1:]
+        elif attr.startswith(".."):
             attr = render_info.base_url + attr
+        else:
+            attr = render_info.root_url + attr
     return attr
