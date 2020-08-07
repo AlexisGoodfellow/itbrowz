@@ -1,2 +1,2 @@
 [bandit]
-exclude: *tests*,*venv*,*env*,*cloned_repos*,testpad.py
+exclude: *tests*,*venv*,*env*
