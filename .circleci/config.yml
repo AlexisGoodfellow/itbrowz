@@ -3,7 +3,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: alexisegoodfellow/itbrowz:latest
+      - image: alexisegoodfellow/itbrowz:latest-dev # Pull from dev because that's where development happens
     working_directory: /app
 
     environment:
@@ -38,7 +38,7 @@ jobs:
       - run:
           name: bandit
           command: |
-            bandit -r itbrowz tests tests_integration | tee ${TEST_RESULTS}/bandit.out
+            bandit -r itbrowz | tee ${TEST_RESULTS}/bandit.out
 
       - run:
           name: black
@@ -60,10 +60,10 @@ jobs:
           command: |
             mypy itbrowz tests tests_integration | tee ${TEST_RESULTS}/mypy.out
 
-      - run:
-          name: pydocstyle
-          command: |
-            pydocstyle itbrowz tests tests_integration | tee ${TEST_RESULTS}/pydoc.out
+      # - run:
+      #     name: pydocstyle
+      #     command: |
+      #       pydocstyle itbrowz tests tests_integration | tee ${TEST_RESULTS}/pydoc.out
 
       # - deploy:
       #     name: Build and push Docker image

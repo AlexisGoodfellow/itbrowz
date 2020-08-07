@@ -1,9 +1,6 @@
 import shutil
-import subprocess
-import tempfile
 from copy import deepcopy
 
-import requests
 from termcolor import colored
 
 from .utils import eprint, get_elem_link_attr
@@ -48,16 +45,14 @@ def render_script(script, render_info):
 
 
 def render_horizontal_line(render_info):
-    return [
-        colored(
-            "|" * render_info.div_depth
-            + ("    " * render_info.list_depth)
-            + ("-" * render_info.available_terminal_width())
-            + "|" * render_info.div_depth,
-            "cyan",
-            attrs=[],
-        )
-    ]
+    return colored(
+        "|" * render_info.div_depth
+        + ("    " * render_info.list_depth)
+        + ("-" * render_info.available_terminal_width())
+        + "|" * render_info.div_depth,
+        "cyan",
+        attrs=[],
+    )
 
 
 def render_div(div, render_info):
@@ -174,14 +169,6 @@ def print_table_data_line(maximum_lengths, row_head_data, render_info):
 
 
 # TABLES AND IMAGES ARE HARD AS NAILS TO FORMAT RIGHT - THESE ARE HACKS
-def render_image(image, render_info):
-    image_source_url = get_elem_link_attr(image, render_info, "src")
-    with tempfile.NamedTemporaryFile() as f:
-        r = requests.get(image_source_url, stream=True)
-        f.write(r.content)
-        subprocess.call(["imgcat", f.name])
-
-
 def element_renderer(elem, render_info):
     # Base case - all that's left is text
     if elem.name is None:
@@ -193,7 +180,7 @@ def element_renderer(elem, render_info):
         render_table(elem, render_info)
         return []  # THIS IS A HACK
     elif elem.name == "img":
-        render_image(elem, render_info)
+        # Come back to image rendering later
         return []
     elif elem.name == "ol" or elem.name == "ul" or elem.name == "nav":
         return render_list(elem, render_info)
